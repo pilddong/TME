@@ -4,6 +4,10 @@ public class WordCount implements Comparable<WordCount> {
     public String word;
     public int n;
     
+    public WordCount() {
+    
+    }
+    
     public WordCount(String word, int n) {
         this.word = word;
         this.n = n;
