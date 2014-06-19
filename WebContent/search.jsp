@@ -60,7 +60,7 @@ Twitter twitter = tf.getInstance();
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
-<title>Twitter �곗씠��留덉씠���붿쭊 - searching...</title>
+<title>Twitter 데이터 마이닝 엔진 - searching...</title>
 </head>
 <body>
 <%=request.getParameter("keyword") %> searching...
