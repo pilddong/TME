@@ -1,0 +1,257 @@
+<%@ page contentType="text/html; charset=utf-8" %>
+<%@ page import="java.util.*" %>
+<%@ page import="java.io.*" %>
+ 
+<%@ page import="twitter4j.*" %>
+<%@ page import="twitter4j.conf.*" %>
+<%@ page import="twitter4j.auth.*" %>
+<%@ page import="functions.*" %>
+<%@ include file="twitter.jsp" %>
+
+
+
+<%
+
+TwitterAPIs sns = new TwitterAPIs();
+ 
+//String keyword = request.getParameter("keyword");
+// 트위터 앱 생성후 받은 토큰
+sns.setConsumer_key("P2ODm5hwh3iCE3pPU1TtFQ");
+sns.setConsumer_secret("IRrvPNwvrW8LbLubZqiyT8E3Tq9o6R9HoGRyf5g");
+ 
+HashMap<String,String> mapCookie = (HashMap) setCookies(request.getCookies());
+ 
+// 인증받은 토큰
+String access_token = mapCookie.get("_MEI_TWITTER_ACCESS_TOKEN");
+String access_tokensecret = mapCookie.get("_MEI_TWITTER_ACCESS_TOKENSECRET");
+ 
+
+
+// 재인증여부
+if (access_token != null && access_tokensecret != null) {
+	sns.SignIn(access_token,access_tokensecret);
+	 
+	out.println(sns.twitter.verifyCredentials().getId()); // 사용자 아아디
+	out.println(sns.twitter.verifyCredentials().getScreenName()); // 사용자 이름
+	
+	
+	
+	
+	
+	//session.setAttribute("keyword", keyword);
+	//response.sendRedirect("search2.jsp");
+	
+	
+	
+	
+	%>
+    
+	<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+	<html>
+	<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
+	<title>Twitter 데이터 마이닝 엔진 - searching...</title>
+	</head>
+	<body>
+	<%=request.getParameter("keyword") %> searching...
+	<%	
+		//request.setCharacterEncoding("EUC-KR");
+		
+		//int i = 0; 
+		ArrayList<WordCount> words = new ArrayList<WordCount>();
+		String str = "";
+		//String keyword = (String)session.getAttribute("keyword");
+		String keyword = (String)request.getParameter("keyword");
+		
+		String lang = (String)request.getParameter("lang");		
+		
+		session.setAttribute("keyword", keyword);
+		
+		System.out.println(keyword + " " + lang + " ");
+		
+		keyword = fncDeCode(keyword);
+		//keyword = new String(keyword.getBytes("8859_1"), "EUC-KR");
+		System.out.println(keyword);
+		
+		
+		if(session.getAttribute("keywordList")==null) {
+			session.setAttribute("keywordList", "");
+		}
+		session.setAttribute("keywordList", ((String)session.getAttribute("keywordList")) + " " + keyword);
+	
+
+		
+	    try {
+	    	
+	    	 Query query = new Query(keyword);
+	         query.setCount(50);	
+	         query.setLang(lang);
+	         query.count(50);
+	   
+ 	         
+	        // query.
+	         QueryResult result;
+	        
+	        
+	                
+	         
+	         
+	         result = sns.twitter.search(query);
+	         List<Status> tweets = result.getTweets();
+	         
+	         System.out.println("getLimit" + result.getRateLimitStatus().getLimit());
+	         System.out.println("getRemaining" + result.getRateLimitStatus().getRemaining());
+	         System.out.println("getResetTimeInSeconds" + result.getRateLimitStatus().getResetTimeInSeconds());
+	         System.out.println("getSecondsUntilReset" + result.getRateLimitStatus().getSecondsUntilReset());
+	         
+	        
+	         //List<Status> tweets = twitter.getTimeline();
+	         for (Status tweet : tweets) {
+	         	//i++;
+	         	str+=tweet.getText() + "\n";
+	             //System.out.println(i + " @" + tweet.getUser().getScreenName() + " - " + tweet.getText());
+	         }
+	         
+	         
+	         Scanner scan = new Scanner(str);
+	         HashMap<String, Integer> count = new HashMap<String, Integer>();
+	         while (scan.hasNext()) {
+	             String word = removePunctuations(scan.next());
+	            // if (filter.contains(word)) continue;
+	             if (word.equals("")) continue;
+	             Integer n = count.get(word);
+	             count.put(word, (n == null) ? 1 : n + 1);
+	         }
+	         PriorityQueue<WordCount> pq = new PriorityQueue<WordCount>();
+	         for (Entry<String, Integer> entry : count.entrySet()) {
+	             pq.add(new WordCount(entry.getKey(), entry.getValue()));
+	         }
+	         words = new ArrayList<WordCount>();
+	         while (!pq.isEmpty()) {
+	             WordCount wc = pq.poll();
+	             if (wc.word.length() > 2) words.add(wc);
+	         }
+	         
+	         session.setAttribute("result", words);
+	         session.setAttribute("tweets", tweets);
+	            
+	    } catch (TwitterException te) {
+	        te.printStackTrace();
+	        System.out.println("Failed to search tweets: " + te.getMessage());
+	        //System.exit(-1);
+	    }
+
+		
+		// session.setAttribute("result", words);
+		
+		
+
+		
+	%>
+	<jsp:forward page="result.jsp"/>
+	<a href=<%=response.encodeURL("result.jsp") %> >결과보기</a>
+	</body>
+	</html>
+
+<%
+	
+	
+	
+	
+	
+
+} else { // 인증 받은 토큰이 없는 경우
+ 
+// 인증 요청 토큰 생성
+	sns.getRequestToken();
+	 
+	String token = sns.requestToken.getToken();
+	String tokensecret = sns.requestToken.getTokenSecret();
+	String authorizationurl = sns.requestToken.getAuthorizationURL();
+	 
+	// 생성한 토큰 세션에 저장.
+	session.setAttribute("_MEI_TWITTER_REQUEST_TOKEN",token);
+	session.setAttribute("_MEI_TWITTER_REQUEST_TOKENSECRET",tokensecret);
+	// 인증url 리다이렉트
+	response.sendRedirect(authorizationurl);
+
+
+
+}
+
+
+
+
+
+
+%>
+ 
+<%!
+// 쿠키 호출 메서드
+private HashMap setCookies(Cookie[] cookies) {
+	HashMap mapRet = new HashMap();
+ 
+	if(cookies != null){
+		for (int i = 0; i < cookies.length; i++) {
+			Cookie obj = cookies[i];
+			mapRet.put(obj.getName(),obj.getValue());
+		}
+	}
+ 
+	return mapRet;
+}
+
+private String removePunctuations(String str) {
+    return str.replaceAll("\\p{Punct}|\\p{Digit}", "");
+}
+ 
+%>
+
+<%!
+public static String fncDeCode(String param)
+{
+	StringBuffer sb= new StringBuffer();
+	int pos= 0;
+	boolean flg= true;
+	
+	if(param!=null)
+	{
+		if(param.length()>1)
+		{
+			while(flg)
+			{
+			String sLen= param.substring(pos,++pos);
+			int nLen= 0;
+		
+			try
+			{
+				nLen= Integer.parseInt(sLen);
+			}
+			catch(Exception e)
+			{
+				nLen= 0;
+			}
+	
+			String code= "";
+			if((pos+nLen)>param.length())
+			code= param.substring(pos);
+			else
+			code= param.substring(pos,(pos+nLen));
+	
+			pos+= nLen;
+	
+			sb.append(((char) Integer.parseInt(code)));
+	
+			if(pos >= param.length())
+			flg= false;
+			}
+		}
+	}
+	else
+	{
+		param= "";
+	}
+	
+	return sb.toString();
+}
+%>
