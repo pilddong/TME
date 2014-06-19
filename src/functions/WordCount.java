@@ -5,7 +5,7 @@ public class WordCount implements Comparable<WordCount> {
     public int n;
     
     public WordCount() {
-    
+    	
     }
     
     public WordCount(String word, int n) {
