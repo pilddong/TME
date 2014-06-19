@@ -123,6 +123,7 @@ if(session.getAttribute("keywordList")!=null) {
 <a href='#' onclick='javascript:formSubmit("금수원")'>금수원</a> 
 <a href='#' onclick='javascript:formSubmit("밀양송전탑")'>밀양송전탑</a> 
 <a href='#' onclick='javascript:formSubmit("문창극")'>문창극</a>
+<a href='#' onclick='javascript:formSubmit("Github")'>Github</a>
  
  
  <br><br>
